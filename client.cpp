@@ -9,11 +9,13 @@
 
 #define SERVER_PORT 12345
 #define SERVER_ADDR "127.0.0.1"
-#define MESSAGE_SIZE 102400
+#define MESSAGE_SIZE 1024100
 
-void send_data(int sockfd);
+using namespace std;
 
-int main(int argc, char** argv)
+void send_data(int sockfd, long message_size);
+
+int main(int argc, char* argv[])
 {
     int clientfd;
     struct sockaddr_in server_addr;
@@ -26,26 +28,30 @@ int main(int argc, char** argv)
     inet_pton(AF_INET, SERVER_ADDR, &server_addr.sin_addr);
     
     connect(clientfd, (struct sockaddr*) &server_addr, sizeof(server_addr));
-    
-    send_data(clientfd);
+
+    string messageSizeTemp = argv[1];
+
+    send_data(clientfd, stol(messageSizeTemp));
     return 0;
 }
 
-void send_data(int sockfd) {
+void send_data(int sockfd, long message_size) {
     char *query;
-    query = (char *)malloc(MESSAGE_SIZE + 1);
-    for (int i = 0; i < MESSAGE_SIZE; i++) {
+    query = (char *)malloc(message_size + 1);
+    for (int i = 0; i < message_size; i++) {
         query[i] = 'a';
     }
-    query[MESSAGE_SIZE] = '\0';
+    query[message_size] = '\0';
 
     const char *cp;
     cp = query;
-    long remaining = (long) strlen(query);
-    while (remaining) {
+    long remaining = (long)strlen(query);
+    while(remaining) 
+    {
         long n_written = send(sockfd, cp, remaining, 0);
         fprintf(stdout, "send into buffer %ld \n", n_written);
-        if (n_written < 0) {
+        if (n_written < 0) 
+        {
             perror("send");
             return;
         }

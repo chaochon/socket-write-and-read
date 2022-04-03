@@ -8,12 +8,14 @@
 
 #define SERVER_PORT 12345
 
+using namespace std;
 
 void read_data(int connfd);
 
 ssize_t readn(int connfd, void* vptr, ssize_t size);
 
-int main(int argc, char**argv)
+
+int main(int argc, char* argv[])
 {
     int listenfd,connfd;
     socklen_t clilen;
@@ -25,7 +27,7 @@ int main(int argc, char**argv)
     // fill the sokect address of server
     bzero(&server_adder, sizeof(server_adder));
     server_adder.sin_family = AF_INET;
-    server_adder.sin_addr.s_addr = htons(INADDR_ANY);
+    server_adder.sin_addr.s_addr = htonl(INADDR_ANY);
     server_adder.sin_port = htons(SERVER_PORT);
 
     // bind between the socket object of server and the address of server
@@ -37,7 +39,7 @@ int main(int argc, char**argv)
     for(;;)
     {
         clilen = sizeof(client_addr);
-        connfd = accept(listenfd, (struct sockaddr *)&client_addr, (socklen_t*)sizeof(client_addr));
+        connfd = accept(listenfd, (struct sockaddr *)&client_addr, &clilen);
         read_data(connfd);
         close(connfd);
     }  
@@ -53,9 +55,12 @@ void read_data(int connfd)
     for(;;)
     {
         std::cout<<"block in read"<<std::endl;
-        if((n = read(connfd, (void*)buff, (ssize_t)1024))==0)
+        if((n = readn(connfd, (void*)buff, (ssize_t)1024))==0)
+        {
+            std::cout<<"n = "<<n<<std::endl;
             return;
-        
+        }
+                   
         time++;
 
         std::cout<<"1K read for "<<time<<std::endl;
@@ -74,17 +79,22 @@ ssize_t readn(int connfd, void* vptr, ssize_t size)
 
     while(nleft > 0)
     {
-        if((nread = read(connfd, ptr, nleft) < 0))
+        if((nread = read(connfd, ptr, nleft)) < 0)
         {
+            cout<<"[errno="<<errno<<"]"<<endl;
             if(errno == EINTR)
                 nread = 0;
             else
                 return -1;
         }else if(nread == 0)
-            break;
+        {
+            cout<<"End of File"<<endl;
+            return 0;
+        }
 
         nleft -= nread;
         ptr += nread;
     }
     return size-nleft;
+
 }
